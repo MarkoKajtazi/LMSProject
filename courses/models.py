@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 
 # Create your models here.
@@ -19,6 +21,9 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.course} {self.student} {self.grade}"
 
+def course_material_path(instance, filename):
+    return os.path.join('course_materials', str(instance.course.id), filename,)
+
 class CourseMaterial(models.Model):
     PDF = 'pdf'
     VIDEO = 'video'
@@ -27,15 +32,18 @@ class CourseMaterial(models.Model):
 
     MATERIAL_TYPE_CHOICES = [
         (PDF, 'PDF'),
-        (VIDEO, 'Video'),
         (LINK, 'Link'),
-        (SLIDES, 'Slides'),
     ]
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="materials")
     title = models.CharField(max_length=255)
     material_type = models.CharField(max_length=10, choices=MATERIAL_TYPE_CHOICES)
-    url_or_path = models.TextField()
+    url = models.TextField(blank=True, null=True, default="")
+    upload = models.FileField(
+        upload_to=course_material_path,
+        null=True,
+        blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
