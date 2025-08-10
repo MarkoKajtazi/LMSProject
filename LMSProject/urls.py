@@ -21,4 +21,5 @@ from main import views as main
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', main.home, name='home'),
+    path('courses/<int:course_id>/', main.course, name='course'),
 ]
