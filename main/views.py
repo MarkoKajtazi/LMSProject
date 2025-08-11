@@ -9,4 +9,4 @@ def home(request):
 
 def course(request, course_id):
     c = Course.objects.get(pk=course_id)
-    return render(request, "course.html", context={'course': c})
+    return render(request, "course.html", context={'course': c, "courses": Course.objects.all()})

@@ -25,5 +25,4 @@ urlpatterns = [
     path('courses/<int:course_id>/', main.course, name='course'),
     path("courses/<int:course_id>/chat/", chat.course_chat, name="course_chat"),
     path("accounts/", include("django.contrib.auth.urls")),
-
 ]
