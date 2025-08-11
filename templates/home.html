@@ -55,7 +55,11 @@
             <div class="card rounded-5 p-0 text-center">
                 <div class="card-body">
                     <h5 class="card-title">Engagement hub</h5>
-                    <a href="#" class="btn btn-primary rounded-pill px-3">Open Engagement Hub</a>
+                    {% if user.is_authenticated %}
+                        <a href="/courses/{{ courses.first.id }}/chat/" class="btn btn-primary rounded-pill px-3">Open Engagement Hub</a>
+                    {% else %}
+                        <a href="/accounts/login/" class="btn btn-primary rounded-pill px-3">Open Engagement Hub</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -63,7 +67,11 @@
             <div class="card rounded-5 p-0 text-center">
                 <div class="card-body">
                     <h5 class="card-title">Grading studio</h5>
-                    <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
+                    {% if user.is_authenticated %}
+                        <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
+                    {% else %}
+                        <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -71,7 +79,11 @@
             <div class="card rounded-5 p-0 text-center">
                 <div class="card-body">
                     <h5 class="card-title">AI Assistant</h5>
-                    <a href="#" class="btn btn-primary rounded-pill px-3">Open AI Assistant</a>
+                    {% if user.is_authenticated %}
+                        <a href="#" class="btn btn-primary rounded-pill px-3">Open AI Assistant</a>
+                    {% else %}
+                        <a href="#" class="btn btn-primary rounded-pill px-3">Open AI Assistant</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

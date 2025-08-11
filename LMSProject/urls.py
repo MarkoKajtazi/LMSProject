@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 import main.views as main
 import chat.views as chat
+from django.contrib.auth.views import LogoutView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,4 +27,6 @@ urlpatterns = [
     path('courses/<int:course_id>/', main.course, name='course'),
     path("courses/<int:course_id>/chat/", chat.course_chat, name="course_chat"),
     path("accounts/", include("django.contrib.auth.urls")),
+    path('accounts/logout/', LogoutView.as_view(next_page='home'), name='logout'),
+
 ]

@@ -30,7 +30,7 @@
             {{ course.description }}
         </p>
         </div>
-    <a class="btn btn-outline-primary w-25 ms-auto fw-bold text-black rounded-pill border-2" href="#">
+    <a class="btn btn-outline-primary w-25 ms-auto fw-bold text-black rounded-pill border-2" href="/courses/{{ course.id }}/chat/">
         Course forum
     </a>
     </div>
@@ -38,6 +38,9 @@
         <p class="align-items-start fs-3">
                     Content
         </p>
+        {% for material in materials %}
+            
+        {% endfor %}
     </div>
 {% endblock %}
 

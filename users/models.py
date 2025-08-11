@@ -27,7 +27,7 @@ class Professor(Person):
     pass
 
 class TeachingAssistant(Person):
-    course = models.ManyToManyField("courses.Course", blank=True)
+    course = models.ManyToManyField("courses.Course", blank=True, related_name="teaching_assistants")
 
 class Student(Person):
     index = models.CharField(max_length=6, unique=True, null=False, blank=False)
