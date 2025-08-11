@@ -53,7 +53,7 @@ class Announcement(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="announcements")
     title = models.CharField(max_length=255)
     message = models.TextField()
-    post_date = models.DateField()
+    announcement_date = models.DateField()
 
     def __str__(self):
-        return f"{self.title} ({self.post_date})"
+        return f"{self.title} ({self.announcement_date})"

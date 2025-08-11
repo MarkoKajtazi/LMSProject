@@ -42,6 +42,6 @@ def course(request, course_id):
         "course": course,
         "courses": courses,
         "materials": CourseMaterial.objects.filter(course_id=course_id),
-        "announcements": Announcement.objects.filter(course_id=course_id),
+        "announcements": Announcement.objects.filter(course_id=course_id).order_by("announcement_date"),
     }
     return render(request, "course.html", context)

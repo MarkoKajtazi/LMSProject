@@ -1,10 +1,7 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>{{ course.title }} – Chat</title>
-    <link rel="stylesheet" href="{% static 'bootstrap-5.3.7-dist/css/bootstrap.css' %}">
+{% block title %} {{ course.name }} {% endblock %}
+{% block extra_head %}
     <style>
         .chat-box {
             height: 60vh;
@@ -30,57 +27,97 @@
             display: inline-block;
         }
     </style>
-</head>
-<body class="container py-4">
-<h3 class="mb-3">{{ course.title }} – Group Chat</h3>
-
-<div id="chat" class="chat-box mb-3">
-    {% for m in messages %}
-        <div class="msg">
-            <div class="meta">
-                {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
+{% endblock %}
+{% block content %}
+    <div class="container align-items-center d-flex pt-2 mb-3">
+        <a href="{% url 'home' %}" class="btn">
+            <img src="{% static 'images/arrow-logo.svg' %}" width="30px" height="30px">
+        </a>
+        <p class="font-weight-bold fs-3 fw-bold text-center m-0">
+            Engagement hub
+        </p>
+    </div>
+    <div class="container d-flex">
+        <div class="container mt-0 min-vh-100 bg-white rounded-4 me-3 px-3 align-items-center">
+            <div class="container mb-0">
+                <p class="align-items-start fs-3 text-black py-3 rounded-4 mb-0 p-0">
+                    {{ course.name }} Forum
+                </p>
+                <div id="chat" class="chat-box justify-content-end ms-0 ps-2 mb-2 border-0">
+                    {% for m in messages %}
+                        <div class="msg">
+                            <div class="meta">
+                                {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
+                            </div>
+                            <div class="bubble">{{ m.content|linebreaksbr }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="bubble">{{ m.content|linebreaksbr }}</div>
+            <form id="chat-form" class="d-flex gap-2 ">
+                <input id="chat-input" type="text" class="form-control rounded-pill px-3" placeholder="Type a message…"
+                       autocomplete="off">
+                <button class="btn m-0 p-0" type="submit">
+                    <img src="{% static 'images/send-logo.svg' %}" width="30px" height="30px">
+                </button>
+            </form>
         </div>
-    {% endfor %}
-</div>
+        <div class="container align-self-end w-25 rounded-4 bg-white py-2 min-vh-100">
+            <p class="text-black fs-5 text-center">
+                Available forums
+            </p>
+            {% for c in courses %}
+                <div class="d-flex align-items-center">
+                <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}" style="width:30px;height:30px;">
+                <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
+                    {% if c.id == course.id %}
+                        <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">
+                            {{ c.name }}
+                        </p>
+                    {% else %}
+                        <p class="m-0 fw-bold text-secondary" style="white-space: nowrap; font-size: 12px">
+                            {{ c.name }}
+                        </p>
+                    {% endif %}
+                    </a>
+                </div>
+                {% endfor %}
+        </div>
+    </div>
 
-<form id="chat-form" class="d-flex gap-2">
-    <input id="chat-input" type="text" class="form-control" placeholder="Type a message…" autocomplete="off">
-    <button class="btn btn-primary" type="submit">Send</button>
-</form>
+{% endblock %}
 
-<script>
-    const courseId = {{ course.id }};
-    const chatBox = document.getElementById("chat");
-    const input = document.getElementById("chat-input");
-    const form = document.getElementById("chat-form");
+{% block extra_scripts %}
+    <script>
+        const courseId = {{ course.id }};
+        const chatBox = document.getElementById("chat");
+        const input = document.getElementById("chat-input");
+        const form = document.getElementById("chat-form");
 
-    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-    const socket = new WebSocket(`${wsScheme}://${location.host}/ws/courses/${courseId}/chat/`);
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const socket = new WebSocket(`${wsScheme}://${location.host}/ws/courses/${courseId}/chat/`);
 
-    socket.onmessage = (e) => {
-        const m = JSON.parse(e.data);
-        const wrap = document.createElement("div");
-        wrap.className = "msg";
-        wrap.innerHTML = `
+        socket.onmessage = (e) => {
+            const m = JSON.parse(e.data);
+            const wrap = document.createElement("div");
+            wrap.className = "msg";
+            wrap.innerHTML = `
         <div class="meta">${m.sender} • ${new Date(m.created_at).toLocaleString()}</div>
         <div class="bubble"></div>`;
-        wrap.querySelector(".bubble").textContent = m.content;
-        chatBox.appendChild(wrap);
+            wrap.querySelector(".bubble").textContent = m.content;
+            chatBox.appendChild(wrap);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text) return;
+            socket.send(JSON.stringify({message: text}));
+            input.value = "";
+        });
+
+        // auto-scroll on load
         chatBox.scrollTop = chatBox.scrollHeight;
-    };
-
-    form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const text = input.value.trim();
-        if (!text) return;
-        socket.send(JSON.stringify({message: text}));
-        input.value = "";
-    });
-
-    // auto-scroll on load
-    chatBox.scrollTop = chatBox.scrollHeight;
-</script>
-</body>
-</html>
+    </script>
+{% endblock %}
