@@ -25,12 +25,14 @@ SECRET_KEY = 'django-insecure-*x!p987_dl(5)txg$$pxdqbn5-(zupp-0bxd*y11@i1k0rb3p@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '192.168.1.128',
+]
 
 
 # Application definition
-
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,8 +43,16 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'courses.apps.CoursesConfig',
     'assignments',
-    'exams'
+    'exams',
+    'channels',
+    "chat.apps.ChatConfig",
 ]
+
+ASGI_APPLICATION = "LMSProject.asgi.application"  # adjust to your project name
+
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -54,6 +64,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "home"          # change to your homepage route
+LOGOUT_REDIRECT_URL = "home"
 ROOT_URLCONF = 'LMSProject.urls'
 
 TEMPLATES = [
