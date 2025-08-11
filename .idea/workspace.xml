@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6f60032d-1131-4942-abac-dba241c1b5e8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/templates/registration/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LMSProject/asgi.py" beforeDir="false" afterPath="$PROJECT_DIR$/LMSProject/asgi.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LMSProject/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/LMSProject/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LMSProject/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/LMSProject/urls.py" afterDir="false" />
-    </list>
+    <list default="true" id="6f60032d-1131-4942-abac-dba241c1b5e8" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -114,7 +108,7 @@
       <workItem from="1754662857740" duration="14048000" />
       <workItem from="1754831415057" duration="4363000" />
       <workItem from="1754901104578" duration="4652000" />
-      <workItem from="1754915579950" duration="814000" />
+      <workItem from="1754915579950" duration="1217000" />
     </task>
     <servers />
   </component>
