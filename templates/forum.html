@@ -29,61 +29,67 @@
     </style>
 {% endblock %}
 {% block content %}
-    <div class="container align-items-center d-flex pt-2 mb-3">
-        <a href="{% url 'home' %}" class="btn">
-            <img src="{% static 'images/arrow-logo.svg' %}" width="30px" height="30px">
-        </a>
-        <p class="font-weight-bold fs-3 fw-bold text-center m-0">
-            Engagement hub
-        </p>
-    </div>
-    <div class="container d-flex">
-        <div class="container mt-0 min-vh-100 bg-white rounded-4 me-3 px-3 align-items-center">
-            <div class="container mb-0">
-                <p class="align-items-start fs-3 text-black py-3 rounded-4 mb-0 p-0">
-                    {{ course.name }} Forum
-                </p>
-                <div id="chat" class="chat-box justify-content-end ms-0 ps-2 mb-2 border-0">
-                    {% for m in messages %}
-                        <div class="msg">
-                            <div class="meta">
-                                {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
+    <div class="container">
+        <div class="container align-items-center d-flex pt-2 mb-3">
+            <a href="{% url 'home' %}" class="btn">
+                <img src="{% static 'images/arrow-logo.svg' %}" width="30px" height="30px">
+            </a>
+            <p class="font-weight-bold fs-3 fw-bold text-center m-0">
+                Engagement hub
+            </p>
+        </div>
+        <div class="container p-0 m-0">
+            <div class="container d-flex m-0 p-0 ">
+                <div class="container bg-white me-3 p-3 rounded-4">
+                    <p class="align-items-start fs-3 text-black py-3 rounded-4 mb-0 p-0">
+                        {{ course.name }} Forum
+                    </p>
+                    <div id="chat" class="chat-box justify-content-end ms-0 ps-2 mb-2 border-0">
+                        {% for m in messages %}
+                            <div class="msg">
+                                <div class="meta">
+                                    {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
+                                </div>
+                                <div class="bubble">{{ m.content|linebreaksbr }}</div>
                             </div>
-                            <div class="bubble">{{ m.content|linebreaksbr }}</div>
+                        {% endfor %}
+                    </div>
+                    <form id="chat-form" class="d-flex gap-2 justify-content-end align-items-center">
+                        <input id="chat-input" type="text" class="form-control rounded-pill px-3"
+                               placeholder="Type a message…"
+                               autocomplete="off">
+                        <button class="btn m-0 p-0" type="submit">
+                            <img src="{% static 'images/send-logo.svg' %}" width="30px" height="30px">
+                        </button>
+                    </form>
+                </div>
+
+                <div class="container bg-white m-0 p-3 w-25 rounded-4">
+                    <p class="text-black fs-5 text-center">
+                        Available forums
+                    </p>
+                    {% for c in courses %}
+                        <div class="d-flex align-items-center">
+                            <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}"
+                                 style="width:30px;height:30px;">
+                            <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
+                                {% if c.id == course.id %}
+                                    <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">
+                                        {{ c.name }}
+                                    </p>
+                                {% else %}
+                                    <p class="m-0 fw-bold text-secondary" style="white-space: nowrap; font-size: 12px">
+                                        {{ c.name }}
+                                    </p>
+                                {% endif %}
+                            </a>
                         </div>
                     {% endfor %}
                 </div>
             </div>
-            <form id="chat-form" class="d-flex gap-2 ">
-                <input id="chat-input" type="text" class="form-control rounded-pill px-3" placeholder="Type a message…"
-                       autocomplete="off">
-                <button class="btn m-0 p-0" type="submit">
-                    <img src="{% static 'images/send-logo.svg' %}" width="30px" height="30px">
-                </button>
-            </form>
-        </div>
-        <div class="container align-self-end w-25 rounded-4 bg-white py-2 min-vh-100">
-            <p class="text-black fs-5 text-center">
-                Available forums
-            </p>
-            {% for c in courses %}
-                <div class="d-flex align-items-center">
-                <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}" style="width:30px;height:30px;">
-                <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
-                    {% if c.id == course.id %}
-                        <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">
-                            {{ c.name }}
-                        </p>
-                    {% else %}
-                        <p class="m-0 fw-bold text-secondary" style="white-space: nowrap; font-size: 12px">
-                            {{ c.name }}
-                        </p>
-                    {% endif %}
-                    </a>
-                </div>
-                {% endfor %}
         </div>
     </div>
+
 
 {% endblock %}
 
