@@ -51,26 +51,7 @@
 
 {% block content %}
     <div class="d-flex">
-        <div class="min-vh-100 bg-white col-2 text-center justify-content-center pt-3" style="border-radius: 5%">
-            <div class="row">
-                <h5 class="fw-normal">
-                    Courses
-                </h5>
-            </div>
-            <div class="col d-flex flex-column w-75 mx-auto my-1">
-                {% for course in courses %}
-                    <a href="{% url 'course' course.id %}" class="btn bg-secondary-subtle mb-2"
-                       style="height: 50px">
-                        <p class="m-0 fw-bold text-start text-black" style="white-space: nowrap; font-size: 12px">
-                            {{ course.name }}
-                        </p>
-                        <p class="text-secondary my-auto text-start" style="font-size: 10px">
-                            {{ course.instructor }}
-                        </p>
-                    </a>
-                {% endfor %}
-            </div>
-        </div>
+        {% include "courses_sidebar.html" with courses=courses only %}
         <div class="container">
             <!-- Page content -->
             <div class="row d-flex justify-content-center mt-3">

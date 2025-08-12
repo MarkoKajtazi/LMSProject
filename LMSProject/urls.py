@@ -21,17 +21,21 @@ from django.urls import path, include
 import main.views as main
 import chat.views as chat
 from django.contrib.auth.views import LogoutView
-
+import courses.views as courses
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', main.home, name='home'),
     path('courses/<int:course_id>/', main.course, name='course'),
     path("courses/<int:course_id>/chat/", chat.course_chat, name="course_chat"),
+    path('courses/new/', courses.course_create, name='course_create'),
+    path("courses/enroll/", courses.enroll_choose_course, name="course_enroll_choose"),
+
     path("accounts/", include("django.contrib.auth.urls")),
     path('accounts/logout/', LogoutView.as_view(next_page='home'), name='logout'),
 
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -18,6 +18,11 @@ class Enrollment(models.Model):
     enroll_date = models.DateField()
     grade = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["course", "student"], name="uniq_course_student_enrollment")
+        ]
+
     def __str__(self):
         return f"{self.course} {self.student} {self.grade}"
 

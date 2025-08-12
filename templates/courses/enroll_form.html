@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Enroll in a course</title>
+  <link rel="stylesheet" href="{% static 'bootstrap-5.3.7-dist/css/bootstrap.css' %}">
+</head>
+<body class="container py-4">
+  <h1>Enroll in a course</h1>
+  <form method="post" class="mt-3">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.course.id_for_label }}">Course</label>
+      {{ form.course }}
+      {% if form.course.errors %}<div class="text-danger small">{{ form.course.errors|striptags }}</div>{% endif %}
+    </div>
+    <button class="btn btn-primary">Enroll</button>
+  </form>
+</body>
+</html>
