@@ -33,6 +33,7 @@ urlpatterns = [
 
     path("accounts/", include("django.contrib.auth.urls")),
     path('accounts/logout/', LogoutView.as_view(next_page='home'), name='logout'),
+    path('grading/', main.grading_studio, name='grading_studio'),
 
 ]
 

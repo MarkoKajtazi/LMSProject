@@ -23,34 +23,14 @@ class CourseFormForProfessor(forms.ModelForm):
         model = Course
         fields = ["name", "description", "credits"]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
+            "name": forms.TextInput(attrs={"rows": 4, "class":"form-control"}),
+            "description": forms.Textarea(attrs={"rows": 4, "class":"form-control"}),
+            "credits": forms.NumberInput(attrs={"rows": 4, "class":"form-control"}),
         }
 
-
-class EnrollmentForm(forms.ModelForm):
-    class Meta:
-        model = Enrollment
-        fields = ["enroll_date"]  # student & course are set in the view
-        widgets = {
-            "enroll_date": forms.DateInput(attrs={"type": "date"})
-        }
-
-    def __init__(self, *args, student=None, course=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.student = student
-        self.course = course
-        self.fields["enroll_date"].initial = timezone.now().date()
-
-    def clean(self):
-        cleaned = super().clean()
-        if self.student and self.course:
-            exists = Enrollment.objects.filter(student=self.student, course=self.course).exists()
-            if exists:
-                raise forms.ValidationError("You are already enrolled in this course.")
-        return cleaned
 
 class EnrollmentPickCourseForm(forms.Form):
-    course = forms.ModelChoiceField(queryset=Course.objects.none())
+    course = forms.ModelChoiceField(queryset=Course.objects.none(), empty_label="— Select a course —", widget=forms.Select(attrs={"class": "form-select w-auto", "style": "min-width: 28rem; height: 40px"}))
 
     def __init__(self, *args, student=None, **kwargs):
         super().__init__(*args, **kwargs)

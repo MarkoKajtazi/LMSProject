@@ -3,32 +3,37 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from courses.forms import CourseFormForProfessor, CourseForm, EnrollmentForm, EnrollmentPickCourseForm
+
+from courses.forms import CourseFormForProfessor, CourseForm, EnrollmentPickCourseForm
 from courses.models import Course, Enrollment
 
 
 # Create your views here.
 @login_required
 def course_create(request):
-    is_professor = hasattr(request.user, "professor")
+    user = request.user
 
-    if not is_professor:
+    is_prof = Course.objects.filter(instructor__user=user).exists()
+    is_ta = Course.objects.filter(teaching_assistants__user=user).exists()
+    is_student = Enrollment.objects.filter(student__user=user).exists()
+
+    if not is_prof:
         return HttpResponseForbidden("Only professor can create courses.")
 
     if request.method == "POST":
-        form = CourseFormForProfessor(request.POST) if is_professor else CourseForm(request.POST)
+        form = CourseFormForProfessor(request.POST) if is_prof else CourseForm(request.POST)
         if form.is_valid():
             course = form.save(commit=False)
-            if is_professor:
+            if is_prof:
                 course.instructor = request.user.professor
             course.save()
             messages.success(request, "Course created successfully.")
             # adjust the redirect to your route; in your project it looked like name='course'
             return redirect("course", course_id=course.id)
     else:
-        form = CourseFormForProfessor() if is_professor else CourseForm()
+        form = CourseFormForProfessor() if is_prof else CourseForm()
 
-    return render(request, "courses/course_form.html", {"form": form})
+    return render(request, "courses/course_form.html", {"form": form, "is_prof": is_prof, "is_student": is_student})
 
 @login_required
 def enroll_choose_course(request):

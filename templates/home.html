@@ -51,7 +51,7 @@
 
 {% block content %}
     <div class="d-flex">
-        {% include "courses_sidebar.html" with courses=courses only %}
+        {% include "courses_sidebar.html" %}
         <div class="container">
             <!-- Page content -->
             <div class="row d-flex justify-content-center mt-3">
@@ -75,7 +75,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Grading studio</h5>
                             {% if user.is_authenticated %}
-                                <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
+                                <a href="{% url 'grading_studio' %}" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
                             {% else %}
                                 <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
                             {% endif %}

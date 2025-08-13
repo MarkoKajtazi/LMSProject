@@ -1,8 +1,10 @@
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 
 from courses.models import Course, CourseMaterial, Announcement, Enrollment
+from exams.models import Exam
 from users.models import Professor, TeachingAssistant, Student
 
 
@@ -11,6 +13,15 @@ def home(request):
     user = request.user
     courses = Course.objects.none()
 
+    is_prof = False
+    is_student = False
+    is_ta = False
+
+    if request.user.is_authenticated:
+        is_prof = Professor.objects.filter(user=request.user).exists()
+        is_student = Student.objects.filter(user=request.user).exists()
+        is_ta = TeachingAssistant.objects.filter(user=request.user).exists()
+
     if user.is_authenticated:
         courses = Course.objects.filter(
             Q(instructor__user=user) |
@@ -18,7 +29,12 @@ def home(request):
             Q(enrollment__student__user=user)
         ).distinct().order_by("name")
 
-    context = {"courses": courses}
+    context = {
+        "courses": courses,
+        "is_prof": is_prof,
+        "is_student": is_student,
+        "is_ta": is_ta,
+    }
     return render(request, "home.html", context=context)
 
 def course(request, course_id):
@@ -43,5 +59,43 @@ def course(request, course_id):
         "courses": courses,
         "materials": CourseMaterial.objects.filter(course_id=course_id),
         "announcements": Announcement.objects.filter(course_id=course_id).order_by("announcement_date"),
+        "is_prof": Professor.objects.filter(user=user).exists(),
+        "is_student": Student.objects.filter(user=user).exists(),
+        "is_ta": TeachingAssistant.objects.filter(user=user).exists(),
     }
     return render(request, "courses/course.html", context)
+
+@login_required
+def grading_studio(request):
+    user = request.user
+    courses = Course.objects.none()
+    exams = Exam.objects.none()
+
+    is_prof = False
+    is_student = False
+    is_ta = False
+
+    if request.user.is_authenticated:
+        is_prof = Professor.objects.filter(user=request.user).exists()
+        is_student = Student.objects.filter(user=request.user).exists()
+        is_ta = TeachingAssistant.objects.filter(user=request.user).exists()
+
+    if user.is_authenticated:
+        courses = Course.objects.filter(
+            Q(instructor__user=user) |
+            Q(teaching_assistants__user=user) |
+            Q(enrollment__student__user=user)
+        ).distinct().order_by("name")
+
+        exams = Exam.objects.filter(
+            Q(course__instructor__user=user)
+        ).distinct().order_by("title")
+
+    context = {
+        "courses": courses,
+        "exams": exams,
+        "is_prof": is_prof,
+        "is_student": is_student,
+        "is_ta": is_ta,
+    }
+    return render(request, "grading_studio/studio_home.html", context=context)
