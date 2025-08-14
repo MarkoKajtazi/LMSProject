@@ -1,13 +1,15 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseForbidden, JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.views.decorators.http import require_GET, require_POST
 
 from courses.models import Course, Enrollment
-from exams.models import Exam, ExamQuestion, StudentAnswer
+from exams.forms import ExamQuestionFormSet, ExamForm, ExamPickForm
+from exams.models import Exam, ExamQuestion, StudentAnswer, ExamRegistration
 from main.views import course
 from users.models import Professor, Student, TeachingAssistant
 from django.contrib import messages
@@ -187,3 +189,99 @@ def submit_answer(request, question_id: int):
             "answer_date": ans.answer_date.isoformat(),
         }
     }, status=201 if created else 200)
+
+
+@login_required
+def exam_create(request, course_id=None):
+    # Must be a professor
+    if not hasattr(request.user, "professor"):
+        raise PermissionDenied("Only professors can create exams.")
+
+    # Limit course choices to courses taught by this professor
+    qs = Course.objects.filter(instructor=request.user.professor)
+
+    if course_id:
+        course = get_object_or_404(qs, id=course_id)
+    else:
+        course = None
+
+    if request.method == "POST":
+        form = ExamForm(request.POST)
+        # lock down the queryset regardless of posted data
+        form.fields["course"].queryset = qs
+
+        if form.is_valid():
+            exam = form.save(commit=False)
+            # sanity: ensure the selected course belongs to this professor
+            if exam.course_id not in qs.values_list("id", flat=True):
+                raise PermissionDenied("You cannot create an exam for this course.")
+            exam.save()
+            messages.success(request, "Exam created. Add questions next.")
+            return redirect("exam_questions_manage", exam_id=exam.id)
+    else:
+        form = ExamForm(initial={"course": course.id if course else None})
+        form.fields["course"].queryset = qs
+
+    return render(request, "grading_studio/exam_form.html", {"form": form, "course": course})
+
+# -------- Professor: manage questions (step 2) --------
+@login_required
+def exam_questions_manage(request, exam_id):
+    exam = get_object_or_404(Exam, id=exam_id)
+
+    # Only the course instructor may edit questions
+    if not hasattr(request.user, "professor") or exam.course.instructor_id != request.user.professor.id:
+        raise PermissionDenied("You can't edit questions for this exam.")
+
+    if request.method == "POST":
+        formset = ExamQuestionFormSet(request.POST, instance=exam)
+        if formset.is_valid():
+            formset.save()
+
+            # Optional: if max_score is 0, auto-sum from questions
+            if exam.max_score == 0:
+                total = sum(q.max_score for q in exam.questions.all())
+                exam.max_score = total
+                exam.save(update_fields=["max_score"])
+
+            messages.success(request, "Questions saved.")
+            return redirect("course", exam.course_id)
+    else:
+        formset = ExamQuestionFormSet(instance=exam)
+
+    return render(request, "grading_studio/exam_questions_formset.html", {"exam": exam, "formset": formset})
+
+
+@login_required
+def exam_register_choose(request, course_id):
+    # Only students register
+    if not hasattr(request.user, "student"):
+        return HttpResponseForbidden("Only students can register for exams.")
+
+    student = request.user.student
+    course = get_object_or_404(Course, id=course_id)
+
+    # Optional: ensure the student is enrolled in this course
+    if not Enrollment.objects.filter(course=course, student=student).exists():
+        messages.error(request, "You must be enrolled in this course to register for its exams.")
+        return redirect("course", course_id=course.id)
+
+    if request.method == "POST":
+        form = ExamPickForm(request.POST, student=student, course=course)
+        if form.is_valid():
+            exam = form.cleaned_data["exam"]
+            ExamRegistration.objects.get_or_create(
+                exam=exam,
+                student=student,
+                defaults={"registration_date": timezone.now()},
+            )
+            messages.success(request, f"Registered for {exam.title}.")
+            return redirect("course", course_id=course.id)
+    else:
+        form = ExamPickForm(student=student, course=course)
+
+    # Render your existing template location (from your screenshot)
+    return render(request, "grading_studio/exam_registration.html", {
+        "form": form,
+        "course": course,
+    })

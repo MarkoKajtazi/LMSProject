@@ -1,10 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
-from courses.forms import CourseFormForProfessor, CourseForm, EnrollmentPickCourseForm
+from courses.forms import CourseFormForProfessor, CourseForm, EnrollmentPickCourseForm, CourseMaterialForm
 from courses.models import Course, Enrollment
 
 
@@ -60,3 +61,24 @@ def enroll_choose_course(request):
         form = EnrollmentPickCourseForm(student=student)
 
     return render(request, "courses/enroll_form.html", {"form": form})
+
+@login_required
+def add_course_material(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+
+    # Allow only the course instructor (adjust if your auth model differs)
+    if not hasattr(request.user, "professor") or course.instructor_id != request.user.professor.id:
+        raise PermissionDenied("You can't add materials to this course.")
+
+    if request.method == "POST":
+        form = CourseMaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            material = form.save(commit=False)
+            material.course = course
+            material.save()
+            messages.success(request, "Material added successfully.")
+            return redirect("course", course.id)  # or your detail route name
+    else:
+        form = CourseMaterialForm()
+
+    return render(request, "courses/add_material_form.html", {"course": course, "form": form})
