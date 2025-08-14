@@ -6,6 +6,7 @@ from exams.models import Exam, ExamRegistration, ExamQuestion, StudentAnswer
 class ExamRegistrationInline(admin.TabularInline):
     model = ExamRegistration
     extra = 0
+    exclude = ("registration_date",)
 
 class ExamQuestionInline(admin.TabularInline):
     model = ExamQuestion

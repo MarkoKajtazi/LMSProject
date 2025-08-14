@@ -61,6 +61,16 @@
                         </p>
                     </div>
                 {% endfor %}
+
+                {% for exam in exams %}
+                    <div class="d-flex justify-content-start align-items-center m-0 p-0">
+                        <img src="{% static "images/question-logo.svg" %}" style="height: 20px; width: 20px;">
+                        <p class="fs-6 text-black m-0 p-2 fst-normal">
+                            {{ exam.title }}
+                        </p>
+                        <a class="btn btn-outline-primary rounded-pill align-content-center btn-sm" href="{% url 'exam_student' exam.id  %}">Open in Grading studio</a>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

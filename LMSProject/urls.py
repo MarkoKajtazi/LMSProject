@@ -22,6 +22,7 @@ import main.views as main
 import chat.views as chat
 from django.contrib.auth.views import LogoutView
 import courses.views as courses
+import exams.views as exams
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -33,8 +34,11 @@ urlpatterns = [
 
     path("accounts/", include("django.contrib.auth.urls")),
     path('accounts/logout/', LogoutView.as_view(next_page='home'), name='logout'),
-    path('grading/', main.grading_studio, name='grading_studio'),
-
+    path('grading/<int:course_id>/', exams.grading_studio, name='grading_studio'),
+    path('grading/exams/<int:exam_id>/', exams.exam_student, name='exam_student'),
+    path("api/exams/<int:exam_id>/questions/", exams.questions_by_exam, name="questions_by_exam"),
+    path("api/questions/<int:question_id>/answer-status/", exams.answer_status, name="answer_status"),
+    path("api/questions/<int:question_id>/answers/", exams.submit_answer, name="submit_answer"),
 ]
 
 

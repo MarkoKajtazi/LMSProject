@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ exam.title }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid d-flex p-0">
+        <div class="min-vh-100 bg-white col-2 text-center justify-content-center pt-3" style="border-radius: 5%">
+            <div class="container d-flex justify-content-center align-items-center px-4">
+                <h5 class="fw-normal">
+                    Questions
+                </h5>
+            </div>
+            <div class="col d-flex flex-column w-75 mx-auto my-1" id="questionsList"
+                 data-questions-url="{% url 'questions_by_exam' exam.id %}"
+                 data-answer-status-template="/api/questions/0/answer-status/">
+            </div>
+        </div>
+        <div class="container">
+            <div class="container d-flex align-items-center justify-content-between pt-2">
+                <p class="font-weight-bold fs-3 fw-bold m-0">
+                    {{ exam.title }}
+                </p>
+
+            </div>
+            <hr class="border-primary ">
+            <div class="container row justify-content-between mt-4" id="questionDetail">
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        (function () {
+            const examId = {{ exam.id }};
+            const endpoints = {
+                questions: `/api/exams/${examId}/questions/`,
+                answerStatus: (qid) => `/api/questions/${qid}/answer-status/`,
+                submitAnswer: (qid) => `/api/questions/${qid}/answers/`,
+            };
+
+            const listEl = document.getElementById('questionsList');
+            const detailEl = document.getElementById('questionDetail');
+
+            // -------- CSRF ----------
+            function getCookie(name) {
+                const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+                return m ? m.pop() : '';
+            }
+
+            const csrftoken = getCookie('csrftoken');
+
+            // -------- Drafts (localStorage) ----------
+            const draftKey = (qid) => `exam:${examId}:q:${qid}:draft`;
+            const saveDraft = (qid, text) => localStorage.setItem(draftKey(qid), text || '');
+            const loadDraft = (qid) => localStorage.getItem(draftKey(qid)) || '';
+            const clearDraft = (qid) => localStorage.removeItem(draftKey(qid));
+
+            // -------- UI helpers ----------
+            function setActiveButton(qid) {
+                listEl.querySelectorAll('button[data-qid]').forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('btn-outline-primary');
+                });
+                const active = listEl.querySelector(`button[data-qid="${qid}"]`);
+                if (active && !active.disabled) {
+                    active.classList.remove('btn-outline-primary');
+                    active.classList.add('bg-primary', 'text-white');
+                }
+            }
+
+            const mkBadge = (text, cls) => {
+                const b = document.createElement('span');
+                b.className = `badge ${cls} ms-2`;
+                b.textContent = text;
+                return b;
+            };
+
+            function ensureDraftBadge(btn, hasDraft) {
+                // remove existing draft badge
+                btn.querySelectorAll('[data-badge="draft"]').forEach(el => el.remove());
+                if (hasDraft) {
+                    const b = mkBadge('draft', 'text-bg-primary');
+                    b.dataset.badge = 'draft';
+                    btn.appendChild(b);
+                }
+            }
+
+            function ensureCheckBadge(btn) {
+                if (!btn.querySelector('[data-badge="answered"]')) {
+                    const b = mkBadge('✓', 'text-bg-primary');
+                    b.dataset.badge = 'answered';
+                    btn.appendChild(b);
+                }
+            }
+
+            // -------- Rendering ----------
+            function renderQuestionDetail(q, answerPayload) {
+                detailEl.innerHTML = '';
+                const hasAnswer = !!answerPayload?.has_answer;
+                const serverAnswer = answerPayload?.answer?.answer || '';
+
+                const header = document.createElement('div');
+                header.className = 'd-flex align-items-center justify-content-between';
+                header.innerHTML = `
+      <p class="fs-4 m-0">${q.order}. ${q.question}</p>
+      <p class="fw-light m-0">Points: ${q.max_score}</p>
+    `;
+
+                const form = document.createElement('form');
+                form.className = 'mt-3';
+                form.setAttribute('novalidate', 'novalidate');
+
+                const csrf = document.createElement('input');
+                csrf.type = 'hidden';
+                csrf.name = 'csrfmiddlewaretoken';
+                csrf.value = csrftoken;
+
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.htmlFor = 'answer';
+                label.textContent = 'Your Answer';
+
+                const textarea = document.createElement('textarea');
+                textarea.id = 'answer';
+                textarea.name = 'answer';
+                textarea.required = true;
+                textarea.className = 'form-text form-control';
+                textarea.style.minHeight = '50vh';
+                textarea.style.resize = 'vertical';
+
+                // Prefer local draft if there is one; otherwise show server value (if any)
+                const draft = loadDraft(q.id);
+                textarea.value = draft || serverAnswer;
+
+                const submit = document.createElement('button');
+                submit.type = 'submit';
+                submit.className = 'btn btn-primary mt-3';
+                submit.textContent = 'Submit your answer';
+
+                // If already answered (list item will be disabled), lock form
+                if (hasAnswer) {
+                    textarea.disabled = true;
+                    submit.disabled = true;
+                    submit.textContent = 'Already answered';
+                }
+
+                // Save draft on every change
+                textarea.addEventListener('input', () => {
+                    saveDraft(q.id, textarea.value);
+                    const btn = listEl.querySelector(`button[data-qid="${q.id}"]`);
+                    if (btn && !btn.disabled) ensureDraftBadge(btn, !!textarea.value.trim());
+                });
+
+                // Submit -> save to server, then clear draft and disable in list
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!textarea.value.trim()) {
+                        textarea.focus();
+                        return;
+                    }
+                    try {
+                        const res = await fetch(endpoints.submitAnswer(q.id), {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+                            body: JSON.stringify({answer: textarea.value}),
+                            credentials: 'same-origin'
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            throw new Error(err?.error || `HTTP ${res.status}`);
+                        }
+
+                        // Clear local draft only after successful submit
+                        clearDraft(q.id);
+
+                        // UI: disable editing, update sidebar button
+                        textarea.disabled = true;
+                        submit.disabled = true;
+                        submit.classList.remove('btn-primary');
+                        submit.classList.add('btn-primary');
+                        submit.textContent = 'Saved';
+
+                        const btn = listEl.querySelector(`button[data-qid="${q.id}"]`);
+                        if (btn) {
+                            btn.disabled = true;
+                            ensureDraftBadge(btn, false);
+                            ensureCheckBadge(btn);
+                            btn.title = 'Already answered';
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Could not save your answer. Please try again.');
+                    }
+                });
+
+                form.appendChild(csrf);
+                form.appendChild(label);
+                form.appendChild(textarea);
+                form.appendChild(submit);
+                detailEl.appendChild(header);
+                detailEl.appendChild(form);
+            }
+
+            async function fetchAnswerStatus(qid) {
+                try {
+                    const r = await fetch(endpoints.answerStatus(qid), {credentials: 'same-origin'});
+                    return r.ok ? await r.json() : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            function renderQuestionsList(questions, statusMap) {
+                listEl.innerHTML = '';
+                const frag = document.createDocumentFragment();
+
+                questions.forEach(q => {
+                    const status = statusMap.get(q.id);
+                    const answered = !!status?.has_answer;
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.qid = q.id;
+                    btn.className = 'btn btn-outline-primary mb-2 rounded-pill text-center';
+                    btn.style.minHeight = '30px';
+                    btn.innerHTML = `<span class="fw-bold" style="font-size:12px">Question #${q.order}</span>`;
+
+                    if (answered) {
+                        btn.disabled = true;
+                        btn.title = 'Already answered';
+                        ensureCheckBadge(btn);
+                    } else {
+                        // indicate draft if exists
+                        ensureDraftBadge(btn, !!loadDraft(q.id).trim());
+                        btn.addEventListener('click', () => loadQuestion(q));
+                    }
+
+                    frag.appendChild(btn);
+                });
+
+                listEl.appendChild(frag);
+            }
+
+            async function loadQuestion(q) {
+                setActiveButton(q.id);
+                const answerPayload = await fetchAnswerStatus(q.id);
+                renderQuestionDetail(q, answerPayload);
+            }
+
+            // -------- init --------
+            async function init() {
+                try {
+                    const res = await fetch(endpoints.questions, {credentials: 'same-origin'});
+                    if (!res.ok) throw new Error(`Failed to load questions (HTTP ${res.status})`);
+                    const data = await res.json();
+                    const qs = data?.questions || [];
+
+                    const statuses = await Promise.all(qs.map(q => fetchAnswerStatus(q.id)));
+                    const statusMap = new Map(qs.map((q, i) => [q.id, statuses[i]]));
+
+                    renderQuestionsList(qs, statusMap);
+
+                    const firstUnanswered = qs.find(q => !statusMap.get(q.id)?.has_answer);
+                    if (firstUnanswered) {
+                        loadQuestion(firstUnanswered);
+                    } else {
+                        detailEl.innerHTML = '<div class="alert alert-primary">All questions are already answered.</div>';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    listEl.innerHTML = '<p class="text-danger small text-center">Failed to load questions.</p>';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', init);
+        })();
+    </script>
+{% endblock %}
