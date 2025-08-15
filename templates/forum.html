@@ -71,8 +71,7 @@
         <p class="text-black fs-5 text-center">Available forums</p>
         {% for c in courses %}
           <div class="d-flex align-items-center">
-            <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}"
-                 style="width:30px;height:30px;">
+            <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}" style="width:30px;height:30px;">
             <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
               {% if c.id == course.id %}
                 <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">

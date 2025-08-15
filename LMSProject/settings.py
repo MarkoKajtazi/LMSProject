@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'exams',
     'channels',
     "chat.apps.ChatConfig",
+    'assistant.apps.AssistantConfig'
 ]
 
 ASGI_APPLICATION = "LMSProject.asgi.application"  # adjust to your project name
@@ -141,6 +142,14 @@ STATIC_ROOT = BASE_DIR / 'static_root'
 
 MEDIA_URL   = '/media/'
 MEDIA_ROOT  = BASE_DIR / 'media'
+
+# Where we persist vector indexes and graphs
+AI_DB_DIR = BASE_DIR / "db" / "courses"
+AI_DB_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ollama settings (adjust model names if you prefer others)
+OLLAMA_LLM_MODEL = "llama3"
+OLLAMA_EMBED_MODEL = "nomic-embed-text"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

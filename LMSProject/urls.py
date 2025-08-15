@@ -23,6 +23,7 @@ import chat.views as chat
 from django.contrib.auth.views import LogoutView
 import courses.views as courses
 import exams.views as exams
+import assistant.views as assistant
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,8 +40,10 @@ urlpatterns = [
     path("api/exams/<int:exam_id>/questions/", exams.questions_by_exam, name="questions_by_exam"),
     path("api/questions/<int:question_id>/answer-status/", exams.answer_status, name="answer_status"),
     path("api/questions/<int:question_id>/answers/", exams.submit_answer, name="submit_answer"),
-]
 
+    path("assistant/response/", assistant.response, name="assistant_response"),
+    path("assistant/chat/", assistant.chat_page, name="assistant_chat_page"),
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
