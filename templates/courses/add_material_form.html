@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <h1 class="text-center mt-3">Add course materials</h1>
+    <div class="container-fluid justify-content-center mt-5">
+        <div class="container m-auto justify-content-center">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                {# Force PDF material type #}
+                <input type="hidden" name="material_type" value="pdf">
+
+                <div class="mb-3">
+                    <label for="id_title" class="form-label fs-3">Title</label>
+                    {{ form.title }}
+                    {% for e in form.title.errors %}
+                        <div class="text-danger small">{{ e }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_upload" class="form-label fs-3">Upload PDF</label>
+                    {{ form.upload }}
+                    <div class="form-text">PDF only; this is required.</div>
+                    {% for e in form.upload.errors %}
+                        <div class="text-danger small">{{ e }}</div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save material</button>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

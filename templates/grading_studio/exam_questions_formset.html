@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Questions — {{ exam.title }}</h3>
+            <a href="{% url 'course' exam.course_id %}" class="btn btn-outline-secondary">Back to course</a>
+        </div>
+        <hr>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            <div id="formset-container" class="vstack gap-3">
+                {# Existing forms (saved + the 1 blank) #}
+                {% for form in formset %}
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label">Question {{ forloop.counter }}</label>
+                                {{ form.question }}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Max score</label>
+                                    {{ form.max_score }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Order</label>
+                                    {{ form.order }}
+                                </div>
+                            </div>
+                            {% if form.DELETE %}
+                                <div class="form-check mt-2">
+                                    {{ form.DELETE }} <label class="form-check-label">Remove this question</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <button type="button" id="add-question" class="btn btn-outline-primary">Add another question</button>
+                <button type="submit" class="btn btn-primary">Save questions</button>
+            </div>
+
+            {# Hidden template of the empty form, with your styling #}
+            <div id="empty-form-template" class="d-none">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label">Question __num__</label>
+                            {{ formset.empty_form.question }}
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Max score</label>
+                                {{ formset.empty_form.max_score }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Order</label>
+                                {{ formset.empty_form.order }}
+                            </div>
+                        </div>
+                        {% if formset.can_delete %}
+                            <div class="form-check mt-2">
+                                {{ formset.empty_form.DELETE }} <label class="form-check-label">Remove this
+                                question</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const prefix = '{{ formset.prefix }}';
+            const totalInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+            const container = document.getElementById('formset-container');
+            const tmpl = document.getElementById('empty-form-template').innerHTML;
+
+            document.getElementById('add-question').addEventListener('click', function (e) {
+                e.preventDefault();
+                const index = parseInt(totalInput.value, 10);
+                // Replace Django’s __prefix__ placeholders with the new index
+                let html = tmpl.replace(/__prefix__/g, index);
+                // Optional: update visible label number
+                html = html.replace(/__num__/g, index + 1);
+
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                container.appendChild(wrapper.firstElementChild);
+
+                // Tell Django there’s one more form
+                totalInput.value = index + 1;
+            });
+        });
+    </script>
+{% endblock %}

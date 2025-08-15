@@ -45,13 +45,29 @@
             </div>
         </div>
         <div class="container">
-            <div class="container align-items-center d-flex pt-2">
-                <a href="{% url 'home' %}" class="btn">
-                    <img src="{% static 'images/arrow-logo.svg' %}" width="30px" height="30px">
-                </a>
-                <p class="font-weight-bold fs-3 fw-bold m-0">
-                    Grading Studio
-                </p>
+            <div class="container align-items-center d-flex pt-2 justify-content-between">
+                <div class="container d-flex ">
+                    <a href="{% url 'home' %}" class="btn">
+                        <img src="{% static 'images/arrow-logo.svg' %}" width="30px" height="30px">
+                    </a>
+                    <p class="font-weight-bold fs-3 fw-bold m-0">
+                        Grading Studio
+                    </p> 
+                </div>
+                    {% if request.user.is_authenticated %}
+                        {% if is_prof %}
+                            <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25" href="{% url 'exam_create_for_course' course.id %}"
+                               title="Add exam">
+                            <p class="nowrap m-0 p-1">Add exam</p>
+                            </a>
+                            {% elif is_student %}
+                            <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25"  href="{% url 'exam_register_choose' course.id %}"
+                               title="Register for exam">
+                            <p class="m-0 p-1 nowrap">Register for exam</p>
+                            </a>
+                        {% endif %}
+                    {% endif %}
+               
             </div>
             <div class="container row justify-content-between">
                 {% for exam in exams %}
