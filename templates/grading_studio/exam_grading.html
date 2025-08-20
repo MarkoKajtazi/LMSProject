@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ exam.title }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid d-flex p-0">
+        <!-- Sidebar: Questions -->
+        <div class="min-vh-100 bg-white col-2 text-center pt-3" style="border-radius:5%">
+            <div class="container d-flex justify-content-center align-items-center px-4">
+                <h5 class="fw-normal m-0">Questions</h5>
+            </div>
+            <div class="col d-flex flex-column w-75 mx-auto my-3" id="questionsList"></div>
+        </div>
+
+        <!-- Main: Submissions -->
+        <div class="container">
+            <div class="container d-flex align-items-center justify-content-between pt-2">
+                <p class="font-weight-bold fs-3 fw-bold m-0">{{ exam.title }}</p>
+            </div>
+            <hr class="border-primary">
+            <div class="container mt-3" id="questionDetail">
+                <div class="text-muted">Pick a question to see submissions.</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        (function () {
+            const examId = {{ exam.id }};
+            const endpoints = {
+                questions: `/api/exams/${examId}/questions/`,
+                answersForQuestion: (qid) => `/api/questions/${qid}/answers/`,  // changed
+            };
+
+            const listEl = document.getElementById('questionsList');
+            const detailEl = document.getElementById('questionDetail');
+
+            // ---------- UI helpers ----------
+            function setActive(qid) {
+                listEl.querySelectorAll('button[data-qid]').forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('btn-outline-primary');
+                });
+                const active = listEl.querySelector(`button[data-qid="${qid}"]`);
+                if (active) {
+                    active.classList.remove('btn-outline-primary');
+                    active.classList.add('bg-primary', 'text-white');
+                }
+            }
+
+            function renderQuestionsList(questions) {
+                listEl.innerHTML = '';
+                const frag = document.createDocumentFragment();
+
+                questions.forEach(q => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.dataset.qid = q.id;
+                    btn.className = 'btn btn-outline-primary mb-2 rounded-pill text-center';
+                    btn.style.minHeight = '34px';
+
+                    const cap = document.createElement('span');
+                    cap.className = 'fw-bold';
+                    cap.style.fontSize = '12px';
+                    cap.textContent = `Q${q.order}`;
+                    btn.appendChild(cap);
+
+                    btn.addEventListener('click', () => loadSubmissions(q));
+                    frag.appendChild(btn);
+                });
+
+                listEl.appendChild(frag);
+            }
+
+            function renderSubmissionsHeader(q, count) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'mb-3';
+
+                const title = document.createElement('p');
+                title.className = 'fs-4 m-0';
+                title.textContent = `${q.order}. ${q.question}`;
+
+                const meta = document.createElement('p');
+                meta.className = 'fw-light m-0';
+                meta.textContent = `Points: ${q.max_score} • Submissions: ${count}`;
+
+                wrapper.appendChild(title);
+                wrapper.appendChild(meta);
+                return wrapper;
+            }
+
+            function renderSubmissionsList(answers) {
+                if (!answers.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'alert alert-secondary';
+                    empty.textContent = 'No submissions yet.';
+                    return empty;
+                }
+
+                const list = document.createElement('div');
+                list.className = 'list-group mb-4';
+
+                answers.forEach((a, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item';
+
+                    const h = document.createElement('div');
+                    h.className = 'd-flex justify-content-between align-items-center mb-2';
+
+                    const left = document.createElement('div');
+                    left.className = 'fw-medium';
+
+                    const fn = a.student?.first_name || '';
+                    const ln = a.student?.last_name || '';
+                    const index = a.student?.index || '';
+                    const name = (fn || ln) ? `${fn} ${ln} ${index}`.trim() : `Student ${a.student?.id ?? ''}`;
+
+                    left.textContent = `#${idx + 1} ${name}`.trim();
+
+                    const right = document.createElement('span');
+                    right.className = 'badge text-bg-primary';
+                    right.textContent = `#${idx + 1}`;
+
+                    h.appendChild(left);
+                    h.appendChild(right);
+
+                    const body = document.createElement('div');
+                    body.style.whiteSpace = 'pre-wrap';
+                    body.textContent = a.answer || '';
+
+                    item.appendChild(h);
+                    item.appendChild(body);
+                    list.appendChild(item);
+                });
+
+                return list;
+            }
+
+            function showLoading() {
+                detailEl.innerHTML = '<div class="text-muted">Loading…</div>';
+            }
+
+            function showError(msg) {
+                detailEl.innerHTML = `<div class="alert alert-danger">${msg}</div>`;
+            }
+
+            // ---------- Data loaders ----------
+            async function loadQuestions() {
+                const r = await fetch(endpoints.questions, {credentials: 'same-origin'});
+                if (!r.ok) throw new Error(`Failed to load questions (HTTP ${r.status})`);
+                const data = await r.json();
+                return data.questions || [];
+            }
+
+            async function loadAnswers(questionId) {
+                const r = await fetch(endpoints.answersForQuestion(questionId), {credentials: 'same-origin'});
+                if (!r.ok) throw new Error(`Failed to load submissions (HTTP ${r.status})`);
+                const data = await r.json();
+                return data.answers || [];
+            }
+
+            async function loadSubmissions(q) {
+                setActive(q.id);
+                showLoading();
+                try {
+                    const answers = await loadAnswers(q.id);
+                    detailEl.innerHTML = '';
+                    detailEl.appendChild(renderSubmissionsHeader(q, answers.length));
+                    detailEl.appendChild(renderSubmissionsList(answers));
+                } catch (e) {
+                    console.error(e);
+                    showError('Could not load submissions.');
+                }
+            }
+
+            // ---------- Init ----------
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const questions = await loadQuestions();
+                    renderQuestionsList(questions);
+
+                    // Auto-open the first question (optional)
+                    if (questions.length) loadSubmissions(questions[0]);
+                } catch (e) {
+                    console.error(e);
+                    listEl.innerHTML = '<p class="text-danger small text-center">Failed to load questions.</p>';
+                }
+            });
+        })();
+    </script>
+{% endblock %}

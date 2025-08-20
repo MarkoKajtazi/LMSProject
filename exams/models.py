@@ -47,7 +47,7 @@ class ExamQuestion(models.Model):
 class StudentAnswer(models.Model):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     student = models.ForeignKey('users.Student', on_delete=models.CASCADE)
-    question = models.ForeignKey(ExamQuestion, on_delete=models.CASCADE)
+    question = models.ForeignKey(ExamQuestion, on_delete=models.CASCADE, related_name="answers")
     answer = models.TextField()
     answer_date = models.DateTimeField(blank=True, default=datetime.now)
     scored = models.IntegerField(default=0)

@@ -4,141 +4,154 @@
 {% block title %}{{ course.name }}{% endblock %}
 
 {% block extra_head %}
-<style>
-  .chat-box {
-    height: 60vh;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: .75rem;
-    padding: 1rem;
-  }
-  .msg { margin-bottom: .75rem; }
-  .msg .meta { font-size: .8rem; opacity: .7; }
-  .msg .bubble {
-    background: #f8f9fa;
-    border-radius: .75rem;
-    padding: .5rem .75rem;
-    display: inline-block;
-    max-width: 80%;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-  }
-  /* My messages: align right and use Bootstrap primary color */
-  .msg.me { text-align: right; }
-  .msg.me .bubble { background: var(--bs-primary); color: #fff; }
-</style>
+    <style>
+        .chat-box {
+            height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: .75rem;
+            padding: 1rem;
+        }
+
+        .msg {
+            margin-bottom: .75rem;
+        }
+
+        .msg .meta {
+            font-size: .8rem;
+            opacity: .7;
+        }
+
+        .msg .bubble {
+            background: #f8f9fa;
+            border-radius: .75rem;
+            padding: .5rem .75rem;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .msg.me {
+            text-align: right;
+        }
+
+        .msg.me .bubble {
+            background: var(--bs-primary);
+            color: #fff;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-  <div class="container align-items-center d-flex pt-2 mb-3">
-    <a href="{% url 'home' %}" class="btn">
-      <img src="{% static 'images/arrow-logo.svg' %}" width="30" height="30" alt="Back">
-    </a>
-    <p class="font-weight-bold fs-3 fw-bold text-center m-0">Engagement hub</p>
-  </div>
-
-  <div class="container p-0 m-0">
-    <div class="container d-flex m-0 p-0">
-      <!-- Forum chat -->
-      <div class="container bg-white me-3 p-3 rounded-4">
-        <p class="align-items-start fs-3 text-black py-3 rounded-4 mb-0 p-0">
-          {{ course.name }} Forum
-        </p>
-
-        <div id="chat" class="chat-box justify-content-end ms-0 ps-2 mb-2 border-0">
-          {% for m in messages %}
-            <div class="msg {% if m.sender_id == request.user.id or m.sender.id == request.user.id %}me{% endif %}">
-              <div class="meta">
-                {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
-              </div>
-              <div class="bubble">{{ m.content|linebreaksbr }}</div>
-            </div>
-          {% endfor %}
+    <div class="container">
+        <div class="container align-items-center d-flex pt-2 mb-3">
+            <a href="{% url 'home' %}" class="btn">
+                <img src="{% static 'images/arrow-logo.svg' %}" width="30" height="30" alt="Back">
+            </a>
+            <p class="font-weight-bold fs-3 fw-bold text-center m-0">Engagement hub</p>
         </div>
 
-        <form id="chat-form" class="d-flex gap-2 justify-content-end align-items-center">
-          <input id="chat-input" type="text" class="form-control rounded-pill px-3"
-                 placeholder="Type a message…" autocomplete="off">
-          <button class="btn m-0 p-0" type="submit" aria-label="Send">
-            <img src="{% static 'images/send-logo.svg' %}" width="30" height="30" alt="Send">
-          </button>
-        </form>
-      </div>
+        <div class="container p-0 m-0">
+            <div class="container d-flex m-0 p-0">
+                <!-- Forum chat -->
+                <div class="container bg-white me-3 p-3 rounded-4">
+                    <p class="align-items-start fs-3 text-black py-3 rounded-4 mb-0 p-0">
+                        {{ course.name }} Forum
+                    </p>
 
-      <!-- Right sidebar: forums list -->
-      <div class="container bg-white m-0 p-3 w-25 rounded-4">
-        <p class="text-black fs-5 text-center">Available forums</p>
-        {% for c in courses %}
-          <div class="d-flex align-items-center">
-            <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}" style="width:30px;height:30px;">
-            <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
-              {% if c.id == course.id %}
-                <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">
-                  {{ c.name }}
-                </p>
-              {% else %}
-                <p class="m-0 fw-bold text-secondary" style="white-space: nowrap; font-size: 12px">
-                  {{ c.name }}
-                </p>
-              {% endif %}
-            </a>
-          </div>
-        {% endfor %}
-      </div>
+                    <div id="chat" class="chat-box justify-content-end ms-0 ps-2 mb-2 border-0">
+                        {% for m in messages %}
+                            <div class="msg {% if m.sender_id == request.user.id or m.sender.id == request.user.id %}me{% endif %}">
+                                <div class="meta">
+                                    {{ m.sender.get_full_name|default:m.sender.username }} • {{ m.created_at }}
+                                </div>
+                                <div class="bubble">{{ m.content|linebreaksbr }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <form id="chat-form" class="d-flex gap-2 justify-content-end align-items-center">
+                        <input id="chat-input" type="text" class="form-control rounded-pill px-3"
+                               placeholder="Type a message…" autocomplete="off">
+                        <button class="btn m-0 p-0" type="submit" aria-label="Send">
+                            <img src="{% static 'images/send-logo.svg' %}" width="30" height="30" alt="Send">
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right sidebar: forums list -->
+                <div class="container bg-white m-0 p-3 w-25 rounded-4">
+                    <p class="text-black fs-5 text-center">Available forums</p>
+                    {% for c in courses %}
+                        <div class="d-flex align-items-center">
+                            <img src="{% static 'images/group-logo.svg' %}" class="m-0" alt="{{ c.name }}"
+                                 style="width:30px;height:30px;">
+                            <a href="{% url 'course_chat' c.id %}" class="btn m-0 p-0">
+                                {% if c.id == course.id %}
+                                    <p class="m-0 fw-bold text-black" style="white-space: nowrap; font-size: 12px">
+                                        {{ c.name }}
+                                    </p>
+                                {% else %}
+                                    <p class="m-0 fw-bold text-secondary" style="white-space: nowrap; font-size: 12px">
+                                        {{ c.name }}
+                                    </p>
+                                {% endif %}
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
+
+    {# === Include the AI summary widget === #}
+{#    {% include "omnipresent_ai.html" %}#}
+
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-  const courseId        = {{ course.id }};
-  const currentUserId   = {{ request.user.id }};
-  const currentUsername = "{{ request.user.username|escapejs }}";
+    <script type="module">
+        (() => {
+            const forumCourseId = {{ course.id }};
+            const forumUserId = {{ request.user.id }};
+            const forumUsername = "{{ request.user.username|escapejs }}";
 
-  const chatBox = document.getElementById("chat");
-  const input   = document.getElementById("chat-input");
-  const form    = document.getElementById("chat-form");
+            const chatBoxEl = document.getElementById("chat");
+            const inputEl = document.getElementById("chat-input");
+            const formEl = document.getElementById("chat-form");
 
-  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-  const socket   = new WebSocket(`${wsScheme}://${location.host}/ws/courses/${courseId}/chat/`);
+            const wsScheme = location.protocol === "https:" ? "wss" : "ws";
+            const socket = new WebSocket(`${wsScheme}://${location.host}/ws/courses/${forumCourseId}/chat/`);
 
-  function isMine(msg) {
-    // Prefer numeric id; fallback to username; last resort compare display name
-    if (typeof msg.sender_id === "number") return msg.sender_id === currentUserId;
-    if (typeof msg.sender_username === "string") return msg.sender_username === currentUsername;
-    if (typeof msg.sender === "string") return msg.sender === currentUsername;
-    return false;
-  }
+            function isMine(msg) {
+                if (typeof msg.sender_id === "number") return msg.sender_id === forumUserId;
+                if (typeof msg.sender_username === "string") return msg.sender_username === forumUsername;
+                if (typeof msg.sender === "string") return msg.sender === forumUsername;
+                return false;
+            }
 
-  socket.onmessage = (e) => {
-    const m = JSON.parse(e.data);
-    const wrap = document.createElement("div");
-    wrap.className = "msg" + (isMine(m) ? " me" : "");
-    wrap.innerHTML = `
-      <div class="meta"></div>
-      <div class="bubble"></div>
-    `;
-    wrap.querySelector(".meta").textContent =
-      `${m.sender} • ${new Date(m.created_at).toLocaleString()}`;
-    wrap.querySelector(".bubble").textContent = m.content;
+            socket.onmessage = (e) => {
+                const m = JSON.parse(e.data);
+                const wrap = document.createElement("div");
+                wrap.className = "msg" + (isMine(m) ? " me" : "");
+                wrap.innerHTML = `<div class="meta"></div><div class="bubble"></div>`;
+                wrap.querySelector(".meta").textContent =
+                    `${m.sender} • ${new Date(m.created_at).toLocaleString()}`;
+                wrap.querySelector(".bubble").textContent = m.content;
+                chatBoxEl.appendChild(wrap);
+                chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+            };
 
-    chatBox.appendChild(wrap);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  };
+            formEl.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const text = inputEl.value.trim();
+                if (!text) return;
+                socket.send(JSON.stringify({message: text}));
+                inputEl.value = "";
+            });
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const text = input.value.trim();
-    if (!text) return;
-
-    // Let the server broadcast the canonical message (with id/timestamp)
-    socket.send(JSON.stringify({ message: text }));
-    input.value = "";
-  });
-
-  // auto-scroll on load
-  chatBox.scrollTop = chatBox.scrollHeight;
-</script>
+            chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+        })();
+    </script>
 {% endblock %}

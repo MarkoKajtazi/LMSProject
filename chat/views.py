@@ -1,11 +1,15 @@
 # chat/views.py
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_http_methods
+
 from courses.models import Course, Enrollment
 from .models import ChatRoom
 from .acl import user_can_access_course_room
+from .services import summarize_unread
+
 
 @login_required
 def course_chat(request, course_id):
@@ -39,3 +43,15 @@ def course_chat(request, course_id):
         "courses": courses,
     }
     return render(request, "forum.html", context=context)
+
+@require_http_methods(["POST"])
+@login_required
+def unread_summary(request, room_id: int):
+    room = get_object_or_404(ChatRoom, pk=room_id)
+    # Optional safety: ensure user is allowed in this course/room
+    # if not user_has_access(request.user, room): raise Http404()
+
+    # mark_as_read defaults to True; allow clients to pass mark=0 to not mark as read yet
+    mark = request.POST.get("mark", "1") != "0"
+    summary = summarize_unread(room, request.user, limit=100, mark_as_read=mark)
+    return JsonResponse({"summary": summary or ""})

@@ -52,30 +52,39 @@
                     </a>
                     <p class="font-weight-bold fs-3 fw-bold m-0">
                         Grading Studio
-                    </p> 
+                    </p>
                 </div>
-                    {% if request.user.is_authenticated %}
-                        {% if is_prof %}
-                            <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25" href="{% url 'exam_create_for_course' course.id %}"
-                               title="Add exam">
+                {% if request.user.is_authenticated %}
+                    {% if is_prof %}
+                        <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25"
+                           href="{% url 'exam_create_for_course' course.id %}"
+                           title="Add exam">
                             <p class="nowrap m-0 p-1">Add exam</p>
-                            </a>
-                            {% elif is_student %}
-                            <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25"  href="{% url 'exam_register_choose' course.id %}"
-                               title="Register for exam">
+                        </a>
+                    {% elif is_student %}
+                        <a class="btn m-0 p-0 btn-outline-primary border-2 rounded-pill w-25"
+                           href="{% url 'exam_register_choose' course.id %}"
+                           title="Register for exam">
                             <p class="m-0 p-1 nowrap">Register for exam</p>
-                            </a>
-                        {% endif %}
+                        </a>
                     {% endif %}
-               
+                {% endif %}
+
             </div>
             <div class="container row justify-content-between">
                 {% for exam in exams %}
                     <div class="card mx-3 my-2 col-5 rounded-4">
                         <div class="card-body fw-normal d-flex justify-content-between align-items-center">
                             <p class="fs-3 m-0 p-0">{{ exam.title }}</p>
-                            <a class="btn btn-primary rounded-pill w-50 text-center" style="height: 40px"
-                               href="{% url 'exam_student' exam.id %}">Open</a>
+                            {% if request.user.is_authenticated %}
+                                {% if is_student %}
+                                    <a class="btn btn-primary rounded-pill w-50 text-center" style="height: 40px"
+                                       href="{% url 'exam_student' exam.id %}">Open</a>
+                                {% else %}
+                                    <a class="btn btn-primary rounded-pill w-50 text-center" style="height: 40px"
+                                       href="{% url 'grading_exam_page' exam.id %}">Open</a>
+                                {% endif %}
+                            {% endif %}
                         </div>
 
                     </div>
