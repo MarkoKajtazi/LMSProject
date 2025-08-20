@@ -16,6 +16,7 @@
         }
 
         .day-cell {
+            position: relative;
             width: 14.28%; /* 100% / 7 columns */
             height: 80px;
             border: 1px solid #dee2e6;
@@ -46,6 +47,26 @@
             font-weight: bold;
             border-bottom: 2px solid #dee2e6;
         }
+
+        .exam-icon {
+            z-index: 2;
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 18px;
+            height: 18px; /* tweak as you like */
+            {#pointer-events: none; /* enables tooltip hover */#}
+        }
+
+        .exam-icon-link {
+            position: absolute;
+            top: 6px;
+            right: 8px; /* JS will offset this when there are multiple exams */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
     </style>
 {% endblock %}
 
@@ -75,7 +96,8 @@
                         <div class="card-body">
                             <h5 class="card-title">Grading studio</h5>
                             {% if user.is_authenticated %}
-                                <a href="{% url 'grading_studio' courses.first.id %}" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
+                                <a href="{% url 'grading_studio' courses.first.id %}"
+                                   class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
                             {% else %}
                                 <a href="#" class="btn btn-primary rounded-pill px-3">Open Grading Studio</a>
                             {% endif %}
@@ -87,9 +109,11 @@
                         <div class="card-body">
                             <h5 class="card-title">AI Assistant</h5>
                             {% if user.is_authenticated %}
-                                <a href="{% url 'assistant_chat_page' %}" class="btn btn-primary rounded-pill px-3">Open AI Assistant</a>
+                                <a href="{% url 'assistant_chat_page' %}" class="btn btn-primary rounded-pill px-3">Open
+                                    AI Assistant</a>
                             {% else %}
-                                <a href="{% url 'login' %}" class="btn btn-primary rounded-pill px-3">Open AI Assistant</a>
+                                <a href="{% url 'login' %}" class="btn btn-primary rounded-pill px-3">Open AI
+                                    Assistant</a>
                             {% endif %}
                         </div>
                     </div>
@@ -122,78 +146,120 @@
 
 {% block extra_scripts %}
     <script src="{% static "bootstrap-5.3.7-dist/js/bootstrap.bundle.js" %}"></script>
+    <script id="exams-data" type="application/json">{{ exams_json|default:"{}"|safe }}</script>
+    {% now "U" as cache_bust %}
+
     <script>
-        const calendarBody = document.getElementById("calendarBody");
-        const monthAndYear = document.getElementById("monthAndYear");
+        (function () {
+            if (window.__calendarInit__) return;
+            window.__calendarInit__ = true;
 
-        let currentDate = new Date();
+            const EXAM_ICON_URL = "{% static 'images/exclamation-logo-com.svg' %}?v={{ cache_bust }}"; // ← no space before ?v
 
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
+            const calendarBody = document.getElementById("calendarBody");
+            const monthAndYear = document.getElementById("monthAndYear");
+            const examsByDate = JSON.parse(document.getElementById("exams-data")?.textContent || "{}");
 
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const prevLastDay = new Date(year, month, 0);
+            let currentDate = new Date();
 
-            const startDay = firstDay.getDay(); // 0=Sun
-            const totalDays = lastDay.getDate();
-            const prevMonthDays = prevLastDay.getDate();
+            const pad = n => String(n).padStart(2, '0');
+            const isoFromYMD = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 
-            const today = new Date();
-            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            function createDayCell(day, extraClass = "", isoDate = null) {
+                const cell = document.createElement("div");
+                cell.className = `day-cell ${extraClass}`;
 
-            calendarBody.innerHTML = "";
-            monthAndYear.textContent = firstDay.toLocaleString("default", {month: "long"}) + " " + year;
+                const span = document.createElement("span");
+                span.textContent = day;
+                cell.appendChild(span);
 
-            let dayCounter = 1;
-            let nextMonthDay = 1;
-            let row = document.createElement("div");
-            row.classList.add("week-row");
+                // Add one clickable icon per exam (link to the course page)
+                if (isoDate && examsByDate[isoDate]) {
+                    const exams = examsByDate[isoDate];
+                    exams.forEach((ex, i) => {
+                        const a = document.createElement("a");
+                        a.href = ex.course_url || "#";          // provided by your view
+                        a.className = "btn m-0 p-0";
+                        a.setAttribute("role", "button");
+                        a.setAttribute("aria-label", `Open ${ex.course}`);
+                        a.title = `${ex.time} ${ex.course} — ${ex.title}`;
+                        // stagger horizontally if multiple exams on the same day
+                        a.style.right = (8 + i * 20) + "px";
 
-            // Add days from previous month
-            for (let i = 0; i < startDay; i++) {
-                const cell = createDayCell(prevMonthDays - startDay + i + 1, "other-month");
-                row.appendChild(cell);
+                        const img = document.createElement("img");
+                        img.src = EXAM_ICON_URL;
+                        img.className = "exam-icon";
+                        img.alt = "Exam scheduled";
+
+                        a.appendChild(img);
+                        cell.appendChild(a);
+                    });
+                }
+                return cell;
             }
 
-            // Add current month days
-            for (let day = 1; day <= totalDays; day++) {
-                if (row.children.length === 7) {
-                    calendarBody.appendChild(row);
-                    row = document.createElement("div");
-                    row.classList.add("week-row");
+
+            function renderCalendar() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const prevLastDay = new Date(year, month, 0);
+
+                const startDay = firstDay.getDay(); // 0=Sun
+                const totalDays = lastDay.getDate();
+                const prevMonthDays = prevLastDay.getDate();
+
+                const today = new Date();
+                const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+                calendarBody.innerHTML = "";
+                monthAndYear.textContent = firstDay.toLocaleString("default", {month: "long"}) + " " + year;
+
+                let nextMonthDay = 1;
+                let row = document.createElement("div");
+                row.classList.add("week-row");
+
+                // Prev month padding
+                for (let i = 0; i < startDay; i++) {
+                    const cell = createDayCell(prevMonthDays - startDay + i + 1, "other-month", null);
+                    row.appendChild(cell);
                 }
 
-                const cell = createDayCell(day);
-                if (isCurrentMonth && day === today.getDate()) {
-                    cell.firstChild.classList.add("today");
+                // Current month
+                for (let d = 1; d <= totalDays; d++) {
+                    if (row.children.length === 7) {
+                        calendarBody.appendChild(row);
+                        row = document.createElement("div");
+                        row.classList.add("week-row");
+                    }
+                    const iso = isoFromYMD(year, month + 1, d);
+                    const cell = createDayCell(d, "", iso);
+                    if (isCurrentMonth && d === today.getDate()) {
+                        cell.firstChild.classList.add("today");
+                    }
+                    row.appendChild(cell);
                 }
-                row.appendChild(cell);
+
+                // Next month padding
+                while (row.children.length < 7) {
+                    const cell = createDayCell(nextMonthDay++, "other-month", null);
+                    row.appendChild(cell);
+                }
+                calendarBody.appendChild(row);
             }
 
-            // Add next month days to complete last row
-            while (row.children.length < 7) {
-                const cell = createDayCell(nextMonthDay++, "other-month");
-                row.appendChild(cell);
+            window.changeMonth = function (offset) {
+                currentDate.setMonth(currentDate.getMonth() + offset);
+                renderCalendar();
+            };
+
+            if (!Object.keys(examsByDate).length) {
+                console.warn("No exams_json detected (no icons will show). Verify the view passes exams_json with course_url.");
             }
-            calendarBody.appendChild(row);
-        }
 
-        function createDayCell(day, extraClass = "") {
-            const cell = document.createElement("div");
-            cell.className = `day-cell ${extraClass}`;
-            const span = document.createElement("span");
-            span.textContent = day;
-            cell.appendChild(span);
-            return cell;
-        }
-
-        function changeMonth(offset) {
-            currentDate.setMonth(currentDate.getMonth() + offset);
             renderCalendar();
-        }
-
-        renderCalendar();
+        })();
     </script>
 {% endblock %}
