@@ -139,6 +139,42 @@ def questions_by_exam(request, exam_id: int):
         }
     )
 
+@require_GET
+def answers_by_question(request, question_id: int):
+    q = get_object_or_404(ExamQuestion, pk=question_id)
+
+    answers_qs = (
+        StudentAnswer.objects
+        .select_related('student__user')
+        .filter(question=q)
+        .order_by('answer_date', 'id')
+    )
+
+    answers = []
+    for a in answers_qs:
+        user = getattr(a.student, "user", None)
+        first_name = (user.first_name if user else getattr(a.student, "first_name", "")) or ""
+        last_name  = (user.last_name  if user else getattr(a.student, "last_name", "")) or ""
+        answers.append({
+            "id": a.id,
+            "student": {
+                "id": a.student_id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "index": a.student.index,
+            },
+            "answer": a.answer,
+            "scored": getattr(a, "scored", False),
+            "answer_date": getattr(a, "answer_date", None).isoformat() if getattr(a, "answer_date", None) else None,
+        })
+
+    return JsonResponse({
+        "question_id": q.id,
+        "question": q.question,
+        "count": len(answers),
+        "answers": answers,
+    })
+
 @login_required
 @require_POST
 def submit_answer(request, question_id: int):

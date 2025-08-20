@@ -1,0 +1,97 @@
+{% load static %}
+<style>
+    #omnipresent_ai {
+        position: fixed;
+        transition: max-height .3s ease;
+        overflow: hidden;
+        right: 1rem;
+        bottom: 2rem;
+    }
+
+    #omnipresent_ai:not(.h-75) #chatMessages {
+        display: none;
+    }
+</style>
+
+<div id="omnipresent_ai" class="rounded-5 bg-black bg-opacity-25 w-25 px-2 d-flex flex-column"
+     data-endpoint="{% url 'assistant_response' %}"
+     data-course-id="{{ course_id|default:'demo' }}">
+
+    <!-- messages area -->
+    <div id="chatMessages" class="flex-grow-1 overflow-auto"></div>
+
+    <!-- bottom bar -->
+    <div class="d-flex gap-2 align-items-center mt-auto p-1">
+        <button id="toggleHeightBtn" class="btn m-0 p-0" type="button" aria-expanded="true">
+            <img src="{% static 'images/chat-logo.svg' %}" style="height:30px; width:30px;">
+        </button>
+        <input id="chatInput" type="text" class="form-control rounded-pill"
+               placeholder="Search or ask a question..." autocomplete="off">
+    </div>
+</div>
+
+<script type="module">
+    (() => {
+        const aiBox = document.getElementById('omnipresent_ai');
+        if (!aiBox) return;
+
+        const aiBtn = document.getElementById('toggleHeightBtn');
+        const aiMessages = document.getElementById('chatMessages');
+        const aiInput = document.getElementById('chatInput');
+
+        const endpoint = aiBox.dataset.endpoint || '/ai/response/';
+        const aiCourseId = aiBox.dataset.courseId || '';
+
+        function getCookie(name) {
+            const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return m ? m.pop() : '';
+        }
+
+        const csrfToken = getCookie('csrftoken');
+
+        aiBtn?.addEventListener('click', () => {
+            const expanded = aiBox.classList.toggle('h-75');
+            aiBtn.setAttribute('aria-expanded', String(expanded));
+        });
+
+        function addBubble(text, who = 'ai') { /* unchanged body */
+        }
+
+        function addLoader() { /* unchanged body */
+        }
+
+        async function ask(question) {
+            addBubble(question, 'user');
+            const loader = addLoader();
+            aiInput.disabled = true;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+                    credentials: 'same-origin',
+                    body: JSON.stringify({course_id: aiCourseId, question})
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                loader.remove();
+                addBubble((data.answer || '').trim() || 'No answer returned.', 'ai');
+            } catch (err) {
+                loader.remove();
+                addBubble('Sorry, request failed: ' + err.message, 'ai');
+            } finally {
+                aiInput.disabled = false;
+                aiInput.focus();
+            }
+        }
+
+        aiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const q = aiInput.value.trim();
+                if (!q) return;
+                aiInput.value = '';
+                ask(q);
+            }
+        });
+    })();
+</script>
